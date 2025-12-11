@@ -36,7 +36,7 @@ A Rails 8 application for searching movies by release date range using The Movie
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:AhmadMajid/gruvi.git
    cd gruvi
    ```
 

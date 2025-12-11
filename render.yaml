@@ -3,7 +3,7 @@ services:
     name: gruvi
     env: ruby
     buildCommand: bundle install && bundle exec rake assets:precompile && bundle exec rake assets:clean
-    startCommand: bundle exec rake db:migrate && bundle exec rails server -b 0.0.0.0 -p $PORT
+    startCommand: ./bin/render-start.sh
     envVars:
       - key: RAILS_ENV
         value: production

@@ -2,8 +2,8 @@ services:
   - type: web
     name: gruvi
     env: ruby
-    buildCommand: bundle install && bundle exec rake db:migrate && bundle exec rake assets:precompile && bundle exec rake assets:clean
-    startCommand: bundle exec rails server -b 0.0.0.0 -p $PORT
+    buildCommand: bundle install && bundle exec rake assets:precompile && bundle exec rake assets:clean
+    startCommand: bundle exec rake db:migrate && bundle exec rails server -b 0.0.0.0 -p $PORT
     envVars:
       - key: RAILS_ENV
         value: production
@@ -11,10 +11,10 @@ services:
         sync: false
       - key: TMDB_API_KEY
         sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: gruvi-db
-          property: connectionString
+    disk:
+      name: gruvi-storage
+      mountPath: /opt/render/project/src/storage
+      sizeGB: 1
 
 databases:
   - name: gruvi-db

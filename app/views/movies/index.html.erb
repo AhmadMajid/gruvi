@@ -1,0 +1,189 @@
+<div class="container">
+  <h1>Movie Search</h1>
+  <p class="subtitle">Search for movies by release date range</p>
+  
+  <!-- Search Form -->
+  <%= form_with url: movies_index_path, method: :get, class: "search-form" do |form| %>
+    <div class="form-group">
+      <%= form.label :start_date, "Start Date (DD/MM/YYYY)" %>
+      <%= form.text_field :start_date, value: params[:start_date], required: true, class: "form-control date-input", placeholder: "DD/MM/YYYY", pattern: "\\d{2}/\\d{2}/\\d{4}", maxlength: "10" %>
+    </div>
+    
+    <div class="form-group">
+      <%= form.label :end_date, "End Date (DD/MM/YYYY)" %>
+      <%= form.text_field :end_date, value: params[:end_date], required: true, class: "form-control date-input", placeholder: "DD/MM/YYYY", pattern: "\\d{2}/\\d{2}/\\d{4}", maxlength: "10" %>
+    </div>
+    
+    <div class="form-group">
+      <%= form.label :sort_by, "Sort By" %>
+      <%= form.select :sort_by, 
+        options_for_select([
+          ['Popularity', 'popularity'],
+          ['Highest Rated', 'rating'],
+          ['Most Voted', 'votes'],
+          ['Newest First', 'newest'],
+          ['Oldest First', 'oldest'],
+          ['Alphabetical', 'alphabetical']
+        ], params[:sort_by] || 'popularity'),
+        {},
+        class: "form-control" %>
+    </div>
+    
+    <%= form.submit "Search Movies", class: "btn btn-primary" %>
+  <% end %>
+  
+  <!-- Error Messages -->
+  <% if @errors.any? %>
+    <div class="errors">
+      <% @errors.each do |error| %>
+        <p class="error"><%= error %></p>
+      <% end %>
+    </div>
+  <% end %>
+  
+  <!-- Results -->
+  <% if params[:start_date].present? && @movies.present? %>
+    <div class="results-header">
+      <h2>Results</h2>
+      <p class="results-count">Showing <%= @movies.count %> of <%= @total_pages * 20 %> total movies (Page <%= @current_page %> of <%= @total_pages %>)</p>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <% if @total_pages > 1 %>
+      <div class="pagination">
+        <%= link_to "« First", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: 1), class: "pagination-link #{'disabled' if @current_page == 1}" unless @current_page == 1 %>
+        <%= link_to "‹ Prev", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: @current_page - 1), class: "pagination-link" if @current_page > 1 %>
+        
+        <% 
+          start_page = [@current_page - 2, 1].max
+          end_page = [@current_page + 2, @total_pages].min
+          (start_page..end_page).each do |page_num|
+        %>
+          <%= link_to page_num, movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: page_num), class: "pagination-link #{' active' if page_num == @current_page}" %>
+        <% end %>
+        
+        <%= link_to "Next ›", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: @current_page + 1), class: "pagination-link" if @current_page < @total_pages %>
+        <%= link_to "Last »", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: @total_pages), class: "pagination-link" if @current_page < @total_pages %>
+      </div>
+    <% end %>
+    
+    <div class="movies-grid">
+      <% @movies.each do |movie| %>
+        <% cache movie do %>
+          <div class="movie-card" onclick="openModal(<%= movie.id %>)">
+            <% if movie.poster_path.present? %>
+              <img src="https://image.tmdb.org/t/p/w200<%= movie.poster_path %>" alt="<%= movie.title %>" class="movie-poster">
+            <% else %>
+              <div class="movie-poster-placeholder">No Image</div>
+            <% end %>
+            <div class="movie-info">
+              <h3><%= movie.title %></h3>
+              <p class="release-date"><strong>Release Date:</strong> <%= movie.release_date.strftime("%d/%m/%Y") %></p>
+              <div class="movie-stats">
+                <span class="stat" title="Average rating out of 10"><strong>⭐</strong> <%= movie.vote_average&.round(1) || 'N/A' %></span>
+                <span class="stat" title="Number of votes"><strong>🗳️</strong> <%= number_with_delimiter(movie.vote_count) if movie.vote_count %></span>
+                <span class="stat" title="TMDb popularity score"><strong>📈</strong> <%= movie.popularity&.round(1) %></span>
+              </div>
+              <p class="overview"><%= truncate(movie.overview, length: 150) %></p>
+            </div>
+          </div>
+
+          <!-- Modal for movie details -->
+          <div id="modal-<%= movie.id %>" class="modal">
+            <div class="modal-content">
+              <span class="modal-close" onclick="closeModal(<%= movie.id %>)">&times;</span>
+              <div class="modal-body">
+                <% if movie.poster_path.present? %>
+                  <img src="https://image.tmdb.org/t/p/w300<%= movie.poster_path %>" alt="<%= movie.title %>" class="modal-poster">
+                <% end %>
+                <div class="modal-info">
+                  <h2><%= movie.title %></h2>
+                  <p class="modal-release-date"><strong>Release Date:</strong> <%= movie.release_date.strftime("%d/%m/%Y") %></p>
+                  <div class="modal-stats">
+                    <span class="stat"><strong>⭐ Rating:</strong> <%= movie.vote_average&.round(1) || 'N/A' %>/10</span>
+                    <span class="stat"><strong>🗳️ Votes:</strong> <%= number_with_delimiter(movie.vote_count) if movie.vote_count %></span>
+                    <span class="stat"><strong>📈 Popularity:</strong> <%= movie.popularity&.round(1) %></span>
+                  </div>
+                  <h3>Overview</h3>
+                  <p class="modal-overview"><%= movie.overview.presence || 'No overview available.' %></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% elsif params[:start_date].present? && @movies.empty? && @errors.empty? %>
+    <p class="no-results">No movies found for the selected date range.</p>
+  <% end %>
+</div>
+
+<script>
+function openModal(movieId) {
+  event.stopPropagation();
+  const modal = document.getElementById('modal-' + movieId);
+  if (modal) {
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeModal(movieId) {
+  event.stopPropagation();
+  const modal = document.getElementById('modal-' + movieId);
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+      modal.style.display = 'none';
+    });
+    document.body.style.overflow = 'auto';
+  }
+});
+
+// Auto-format date inputs as DD/MM/YYYY
+document.addEventListener('DOMContentLoaded', function() {
+  const dateInputs = document.querySelectorAll('.date-input');
+  
+  dateInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+      
+      if (value.length >= 2) {
+        value = value.slice(0, 2) + '/' + value.slice(2);
+      }
+      if (value.length >= 5) {
+        value = value.slice(0, 5) + '/' + value.slice(5, 9);
+      }
+      
+      e.target.value = value;
+    });
+    
+    // Validate on blur
+    input.addEventListener('blur', function(e) {
+      const value = e.target.value;
+      if (value && !value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        e.target.setCustomValidity('Please enter date in DD/MM/YYYY format');
+      } else {
+        e.target.setCustomValidity('');
+      }
+    });
+  });
+});
+</script>
+

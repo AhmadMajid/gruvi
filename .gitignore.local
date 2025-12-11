@@ -1,0 +1,2 @@
+# .env file contains sensitive API keys
+.env

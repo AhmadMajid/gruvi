@@ -1,0 +1,12 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  url: "discover/movie?start_date=2025-01-01&end_date=2025-12-31&page=1&sort=popularity"
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  url: "discover/movie?start_date=2025-06-01&end_date=2025-06-30&page=1&sort=rating"
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+

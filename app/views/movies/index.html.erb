@@ -45,7 +45,11 @@
   <% if params[:start_date].present? && @movies.present? %>
     <div class="results-header">
       <h2>Results</h2>
-      <p class="results-count">Showing <%= @movies.count %> of <%= @total_pages * 20 %> total movies (Page <%= @current_page %> of <%= @total_pages %>)</p>
+      <% 
+        start_movie = (@current_page - 1) * 20 + 1
+        end_movie = [@current_page * 20, @total_pages * 20].min
+      %>
+      <p class="results-count">Showing movies <%= start_movie %>-<%= end_movie %> of <%= @total_pages * 20 %> total (Page <%= @current_page %> of <%= @total_pages %>)</p>
     </div>
     
     <!-- Pagination Controls -->
@@ -61,6 +65,12 @@
         %>
           <%= link_to page_num, movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: page_num), class: "pagination-link #{' active' if page_num == @current_page}" %>
         <% end %>
+        
+        <span class="page-jump">
+          <label for="page-input">Go to:</label>
+          <input type="number" id="page-input" min="1" max="<%= @total_pages %>" placeholder="<%= @current_page %>" style="width: 60px; padding: 5px; text-align: center;">
+          <button onclick="goToPage()" class="pagination-link">Go</button>
+        </span>
         
         <%= link_to "Next ›", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: @current_page + 1), class: "pagination-link" if @current_page < @total_pages %>
         <%= link_to "Last »", movies_index_path(start_date: params[:start_date], end_date: params[:end_date], sort_by: params[:sort_by], page: @total_pages), class: "pagination-link" if @current_page < @total_pages %>
@@ -119,6 +129,36 @@
 </div>
 
 <script>
+function goToPage() {
+  const input = document.getElementById('page-input');
+  const pageNum = parseInt(input.value);
+  const maxPage = parseInt(input.max);
+  const minPage = parseInt(input.min);
+  
+  if (isNaN(pageNum) || pageNum < minPage || pageNum > maxPage) {
+    alert(`Please enter a valid page number between ${minPage} and ${maxPage}`);
+    input.value = '';
+    return;
+  }
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('page', pageNum);
+  window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+}
+
+// Allow Enter key to trigger page jump
+document.addEventListener('DOMContentLoaded', function() {
+  const pageInput = document.getElementById('page-input');
+  if (pageInput) {
+    pageInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        goToPage();
+      }
+    });
+  }
+});
+
 function openModal(movieId) {
   event.stopPropagation();
   const modal = document.getElementById('modal-' + movieId);

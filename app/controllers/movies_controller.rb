@@ -51,7 +51,12 @@ class MoviesController < ApplicationController
       movies = result[:movies]
       total_pages = result[:total_pages]
       
-      api_request = ApiRequest.create!(url: cache_key)
+      api_request = ApiRequest.find_or_initialize_by(url: cache_key)
+      
+      api_request.search_results.destroy_all if api_request.persisted?
+      
+      api_request.save!
+      
       movies.each_with_index do |movie, index|
         SearchResult.create!(
           api_request: api_request,
@@ -133,7 +138,6 @@ class MoviesController < ApplicationController
             popularity: result.popularity,
             vote_average: result.vote_average,
             vote_count: result.vote_count,
-            revenue: result.revenue
           )
           movies << movie
         rescue ArgumentError => e

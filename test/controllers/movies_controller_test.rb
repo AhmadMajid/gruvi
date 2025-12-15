@@ -106,4 +106,47 @@ class MoviesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match /An error occurred/, response.body
   end
+  
+  test "should refresh expired cache and reuse same ApiRequest record" do
+    cache_key = "discover/movie?start_date=2025-06-01&end_date=2025-06-30&page=1&sort=popularity"
+    api_request = ApiRequest.create!(url: cache_key)
+    old_movie = Movie.create!(title: "Old Cached Movie", tmdb_id: 999999, release_date: "2025-06-15")
+    SearchResult.create!(api_request: api_request, movie: old_movie, position: 0)
+    
+    api_request.update_column(:created_at, 25.hours.ago)
+    
+    initial_api_request_id = api_request.id
+    initial_api_request_count = ApiRequest.count
+    
+    new_movie_data = OpenStruct.new(
+      id: 111111,
+      title: "Fresh Movie",
+      release_date: "2025-06-20",
+      overview: "A new movie",
+      poster_path: "/path.jpg",
+      popularity: 100.0,
+      vote_average: 8.5,
+      vote_count: 1000
+    )
+    mock_response = OpenStruct.new(results: [new_movie_data], total_pages: 1)
+    Tmdb::Discover.stubs(:movie).returns(mock_response)
+    
+    get movies_index_url, params: { 
+      start_date: "2025-06-01", 
+      end_date: "2025-06-30"
+    }
+    assert_response :success
+    
+    assert_equal initial_api_request_count, ApiRequest.count, "Should not create duplicate ApiRequest"
+    
+    api_request.reload
+    assert_equal initial_api_request_id, api_request.id, "Should reuse same ApiRequest record"
+    assert api_request.updated_at > 1.hour.ago, "Should update timestamp on expired cache"
+    
+    assert_equal 1, api_request.search_results.count, "Should have new search results"
+    assert_equal 111111, api_request.search_results.first.movie.tmdb_id, "Should have fresh movie data"
+    
+    assert_includes assigns(:movies).map(&:tmdb_id), 111111, "Should show fresh movie"
+    refute_includes assigns(:movies).map(&:tmdb_id), 999999, "Should not show old cached movie"
+  end
 end

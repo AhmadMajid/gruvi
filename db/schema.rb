@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_10_210845) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_15_084447) do
   create_table "api_requests", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -24,7 +24,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_210845) do
     t.float "popularity"
     t.string "poster_path"
     t.date "release_date"
-    t.integer "revenue"
     t.string "title"
     t.integer "tmdb_id"
     t.datetime "updated_at", null: false

@@ -17,10 +17,9 @@ class MovieSearchIntegrationTest < ActionDispatch::IntegrationTest
       release_date: "2025-06-15",
       overview: "A great test movie",
       poster_path: "/test.jpg",
-      popularity: 100.0,
+      popularity: 15.0,
       vote_average: 8.5,
-      vote_count: 500,
-      revenue: nil
+      vote_count: 200
     )
     
     mock_response = OpenStruct.new(results: [mock_movie_data], total_pages: 1)
@@ -51,10 +50,9 @@ class MovieSearchIntegrationTest < ActionDispatch::IntegrationTest
       release_date: "2025-12-25",
       overview: "Testing date display",
       poster_path: nil,
-      popularity: 50.0,
-      vote_average: 7.0,
-      vote_count: 100,
-      revenue: nil
+      popularity: 10.0,
+      vote_average: 7.5,
+      vote_count: 100
     )
     
     mock_response = OpenStruct.new(results: [movie_data], total_pages: 1)

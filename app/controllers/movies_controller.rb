@@ -42,8 +42,10 @@ class MoviesController < ApplicationController
     
     if cached_request
       Rails.logger.info "Using cached search results for: #{cache_key}"
-      movies = cached_request.search_results.order(:position).map(&:movie)
-      total_pages = get_total_pages(start_date, end_date)
+      movies = Movie.joins(:search_results)
+                    .where(search_results: { api_request_id: cached_request.id })
+                    .order('search_results.id')
+      total_pages = cached_request.response_data&.dig('total_pages') || 1
       { movies: movies, total_pages: total_pages }
     else
       Rails.logger.info "Fetching new results from TMDb for: #{cache_key}"
@@ -55,31 +57,18 @@ class MoviesController < ApplicationController
       
       api_request.search_results.destroy_all if api_request.persisted?
       
+      api_request.response_data = { 'total_pages' => total_pages }
       api_request.save!
       
-      movies.each_with_index do |movie, index|
+      movies.each do |movie|
         SearchResult.create!(
           api_request: api_request,
-          movie: movie,
-          position: index
+          movie: movie
         )
       end
       
       { movies: movies, total_pages: total_pages }
     end
-  end
-  
-  def get_total_pages(start_date, end_date)
-
-    response = Tmdb::Discover.movie(
-      'primary_release_date.gte' => start_date.to_s,
-      'primary_release_date.lte' => end_date.to_s,
-      'page' => 1
-    )
-    [response.total_pages, 500].min
-  rescue => e
-    Rails.logger.error "Error fetching total pages: #{e.message}"
-    1
   end
   
   def fetch_from_tmdb(start_date, end_date, page = 1, sort_by = 'popularity')

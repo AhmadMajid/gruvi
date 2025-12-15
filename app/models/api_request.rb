@@ -3,6 +3,8 @@ class ApiRequest < ApplicationRecord
   
   has_many :search_results, dependent: :destroy
   
+  serialize :response_data, coder: JSON
+  
   CACHE_EXPIRY = 24.hours
   
   def self.cache(url)

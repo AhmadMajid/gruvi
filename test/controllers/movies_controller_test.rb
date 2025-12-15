@@ -80,9 +80,9 @@ class MoviesControllerTest < ActionDispatch::IntegrationTest
   
   test "should use cached results when available" do
     cache_key = "discover/movie?start_date=2025-05-01&end_date=2025-05-31&page=1&sort=popularity"
-    api_request = ApiRequest.create!(url: cache_key)
+    api_request = ApiRequest.create!(url: cache_key, response_data: { 'total_pages' => 5 })
     movie = Movie.create!(title: "Cached Movie May", tmdb_id: 888888, release_date: "2025-05-15")
-    SearchResult.create!(api_request: api_request, movie: movie, position: 0)
+    SearchResult.create!(api_request: api_request, movie: movie)
     
     mock_response = OpenStruct.new(results: [], total_pages: 1)
     Tmdb::Discover.stubs(:movie).returns(mock_response)
@@ -109,9 +109,9 @@ class MoviesControllerTest < ActionDispatch::IntegrationTest
   
   test "should refresh expired cache and reuse same ApiRequest record" do
     cache_key = "discover/movie?start_date=2025-06-01&end_date=2025-06-30&page=1&sort=popularity"
-    api_request = ApiRequest.create!(url: cache_key)
+    api_request = ApiRequest.create!(url: cache_key, response_data: { 'total_pages' => 2 })
     old_movie = Movie.create!(title: "Old Cached Movie", tmdb_id: 999999, release_date: "2025-06-15")
-    SearchResult.create!(api_request: api_request, movie: old_movie, position: 0)
+    SearchResult.create!(api_request: api_request, movie: old_movie)
     
     api_request.update_column(:created_at, 25.hours.ago)
     

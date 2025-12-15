@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_15_084447) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_15_110644) do
   create_table "api_requests", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "response_data"
     t.datetime "updated_at", null: false
     t.text "url"
     t.index ["url"], name: "index_api_requests_on_url", unique: true

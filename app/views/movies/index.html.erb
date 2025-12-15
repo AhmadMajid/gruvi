@@ -201,7 +201,36 @@ document.addEventListener('DOMContentLoaded', function() {
   const dateInputs = document.querySelectorAll('.date-input');
   
   dateInputs.forEach(input => {
+    let isDeleting = false;
+    
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace') {
+        isDeleting = true;
+        const cursorPos = e.target.selectionStart;
+        const value = e.target.value;
+        
+        // If backspacing right after a slash, remove both the slash and the preceding digit
+        if (cursorPos > 0 && value[cursorPos - 1] === '/') {
+          e.preventDefault();
+          const newValue = value.slice(0, cursorPos - 2) + value.slice(cursorPos);
+          e.target.value = newValue;
+          e.target.setSelectionRange(cursorPos - 2, cursorPos - 2);
+          isDeleting = false; // Reset flag since deletion was handled manually
+        }
+      }
+    });
+    
     input.addEventListener('input', function(e) {
+      const cursorPos = e.target.selectionStart;
+      
+      // When deleting, preserve the current structure without reformatting
+      if (isDeleting) {
+        isDeleting = false;
+        e.target.setSelectionRange(cursorPos, cursorPos);
+        return;
+      }
+      
+      // When typing, format the input with slashes at positions 2 and 4
       let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
       
       if (value.length >= 2) {
@@ -211,10 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
         value = value.slice(0, 5) + '/' + value.slice(5, 9);
       }
       
+      const oldLength = e.target.value.length;
       e.target.value = value;
+      const newLength = value.length;
+      
+      // Adjust cursor position if a slash was automatically inserted
+      if (newLength > oldLength) {
+        e.target.setSelectionRange(cursorPos + 1, cursorPos + 1);
+      } else {
+        e.target.setSelectionRange(cursorPos, cursorPos);
+      }
     });
     
-    // Validate on blur
+    // Validate format on blur
     input.addEventListener('blur', function(e) {
       const value = e.target.value;
       if (value && !value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
